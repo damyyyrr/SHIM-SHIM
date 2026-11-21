@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "@types/react": "~19.3.0",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3"
   },
@@ -33,8 +34,12 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/training.test.ts tests/data.test.ts",
-    "export:web": "expo export --platform web"
+    "test": "node --import tsx --test tests/training.test.ts tests/data.test.ts tests/assistant.test.ts",
+    "export:web": "expo export --platform web",
+    "export:preview": "expo export --platform web --output-dir build-check --max-workers 2",
+    "ai": "node --import tsx server/index.ts",
+    "test:ai": "node --import tsx scripts/smoke-ai.ts",
+    "build:hosted": "npm run export:preview && node scripts/build-hosted.mjs"
   },
   "private": true
 }

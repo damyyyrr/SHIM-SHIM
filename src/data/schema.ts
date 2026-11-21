@@ -1,5 +1,6 @@
-import { z } from 'zod';
-import { AppState } from '../domain/types';
+import { z } from "zod";
+import { AppState } from "../domain/types";
+import { assistantActionSchema } from "../assistant/schema";
 const finite = z.number().finite();
 const nutrition = z.object({
   calories: finite.min(0).max(20000),
@@ -20,7 +21,10 @@ const exercise = z
     restSeconds: z.number().int().min(0).max(1800),
     notes: z.string().max(3000),
   })
-  .refine((item) => item.minReps <= item.maxReps, 'Rango de repeticiones inválido.');
+  .refine(
+    (item) => item.minReps <= item.maxReps,
+    "Rango de repeticiones inválido.",
+  );
 const iso = z.string().datetime();
 const session = z.object({
   id: z.string().min(1),
@@ -55,6 +59,7 @@ const session = z.object({
 });
 const stateSchema = z.object({
   version: z.literal(1),
+  assistantServerUrl: z.string().max(500).optional(),
   activeProfileId: z.string(),
   profiles: z
     .array(
@@ -62,12 +67,12 @@ const stateSchema = z.object({
         id: z.string().min(1),
         name: z.string().min(1).max(60),
         goal: z.enum([
-          'muscle',
-          'fat-loss',
-          'strength',
-          'maintenance',
-          'recomposition',
-          'wellbeing',
+          "muscle",
+          "fat-loss",
+          "strength",
+          "maintenance",
+          "recomposition",
+          "wellbeing",
         ]),
         weeklyTarget: z.number().int().min(1).max(7),
         nutritionTargets: nutrition,
@@ -102,17 +107,19 @@ const stateSchema = z.object({
     z.object({
       id: z.string(),
       profileId: z.string(),
-      role: z.enum(['user', 'assistant']),
+      role: z.enum(["user", "assistant"]),
       text: z.string().max(10000),
+      actions: z.array(assistantActionSchema).max(40).optional(),
     }),
   ),
 });
 export function parseState(raw: string): AppState {
-  if (raw.length > 5_000_000) throw new Error('El respaldo supera el tamaño admitido (5 MB).');
+  if (raw.length > 5_000_000)
+    throw new Error("El respaldo supera el tamaño admitido (5 MB).");
   const parsed = stateSchema.parse(JSON.parse(raw));
   const ids = new Set(parsed.profiles.map((profile) => profile.id));
   if (ids.size !== parsed.profiles.length || !ids.has(parsed.activeProfileId))
-    throw new Error('Los perfiles del respaldo no son válidos.');
+    throw new Error("Los perfiles del respaldo no son válidos.");
   for (const item of [
     ...parsed.routines,
     ...parsed.sessions,
@@ -120,11 +127,15 @@ export function parseState(raw: string): AppState {
     ...parsed.messages,
   ]) {
     if (!ids.has(item.profileId))
-      throw new Error('El respaldo contiene datos sin un perfil válido.');
+      throw new Error("El respaldo contiene datos sin un perfil válido.");
   }
   for (const [profileId, active] of Object.entries(parsed.activeSessions)) {
-    if (!ids.has(profileId) || active.profileId !== profileId || active.finishedAt)
-      throw new Error('La sesión en curso no es válida.');
+    if (
+      !ids.has(profileId) ||
+      active.profileId !== profileId ||
+      active.finishedAt
+    )
+      throw new Error("La sesión en curso no es válida.");
   }
   return parsed;
 }
