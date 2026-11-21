@@ -113,7 +113,8 @@ export function createProvider(
               ? { tools, tool_choice: "auto", parallel_tool_calls: false }
               : {}),
             temperature: 0.2,
-            max_completion_tokens: 1800,
+            max_completion_tokens:
+              requestOptions?.allowTools === false ? 750 : 1800,
             reasoning_effort: "low",
           }
         : {

@@ -187,6 +187,13 @@ export async function runAgent(
       reply.tool_calls.some(
         (call) => call.function.arguments._continue !== false,
       );
+    if (!hadToolError) {
+      messages.push({
+        role: "system",
+        content:
+          "Formato para la respuesta siguiente: si ya completaste el pedido, respondé en 2 o 3 párrafos, máximo 100 palabras, sin tablas, listas extensas, nombres de herramientas ni identificadores internos. Las tarjetas de la app ya muestran los cálculos y cambios. Explicá solo el resultado principal y las condiciones o datos que falten. Si faltan pasos, continuá usando herramientas.",
+      });
+    }
   }
   // Nothing is committed until the client receives a complete successful turn.
   throw new Error(
